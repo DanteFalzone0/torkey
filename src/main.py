@@ -18,11 +18,12 @@ import pygame
 import sys
 import os
 from pygame.locals import *
-FPS_CLOCK = pygame.time.Clock()
-TURKEY_X_POS = 20
-SURFACE = pygame.display.set_mode((600, 600))
-BLACK = (0, 0, 0)
-GROUND_Y_POS = 540
+from apple import Apple
+fps_clock = pygame.time.Clock()
+turkey_x_pos = 20
+surface = pygame.display.set_mode((600, 600))
+black = (0, 0, 0)
+ground_y_pos = 540
 
 
 class Turkey:
@@ -46,20 +47,20 @@ class Turkey:
         if self._which_frame == 0:
             pygame_surface.blit(
                 self._frame_0,
-                (TURKEY_X_POS, self._y_pos)
+                (turkey_x_pos, self._y_pos)
             )
 
         elif self._which_frame == 1:
             pygame_surface.blit(
                 self._frame_1,
-                (TURKEY_X_POS, self._y_pos)
+                (turkey_x_pos, self._y_pos)
             )
 
         height = self._frame_0.get_size()[1]
-        if self._y_pos < GROUND_Y_POS - height:
+        if self._y_pos < ground_y_pos - height:
             pygame_surface.blit(
                 self._wing,
-                (TURKEY_X_POS + 50, self._y_pos + 60)
+                (turkey_x_pos + 50, self._y_pos + 60)
             )
 
 
@@ -69,8 +70,8 @@ class Turkey:
 
     def update_y_pos(self):
         height = self._frame_0.get_size()[1]
-        if self._y_pos + height >= GROUND_Y_POS:
-            self._y_pos = GROUND_Y_POS - height
+        if self._y_pos + height >= ground_y_pos:
+            self._y_pos = ground_y_pos - height
             if self._downwards_momentum > 0:
                 self._downwards_momentum = 0.0
         else:
@@ -88,14 +89,16 @@ class Turkey:
             self._which_frame = 0
 
 
-TURKEY = Turkey(
+turkey = Turkey(
     20,
     "assets/turkey0.png",
     "assets/turkey1.png",
     "assets/wing.png"
 )
 
-GROUND = pygame.image.load("assets/ground_foreground.png")
+ground = pygame.image.load("assets/ground_foreground.png")
+
+apple = Apple(300, "assets/apple.png")
 
 def update_game_state(ticks):
     for event in pygame.event.get():
@@ -103,24 +106,26 @@ def update_game_state(ticks):
             pygame.quit()
             sys.exit(0)
 
-    SURFACE.fill(BLACK)
+    surface.fill(black)
+    surface.blit(ground, (0, ground_y_pos))
 
-    SURFACE.blit(GROUND, (0, GROUND_Y_POS))
+    if apple:
+        apple.render(surface)
+        apple.update(turkey_x_pos)
 
-    TURKEY.update_y_pos()
-
-    TURKEY.render(SURFACE)
+    turkey.update_y_pos()
+    turkey.render(surface)
 
     if ticks % 6 == 0:
-        TURKEY.switch_frame()
+        turkey.switch_frame()
 
     keys = pygame.key.get_pressed()
     if keys[K_SPACE]:
-        TURKEY.gobble()
-        TURKEY.jump()
+        turkey.gobble()
+        turkey.jump()
 
     pygame.display.update()
-    FPS_CLOCK.tick(30)
+    fps_clock.tick(30)
 
     if ticks == 59:
         return 0
