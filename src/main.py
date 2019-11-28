@@ -16,17 +16,29 @@
 
 import pygame
 import sys
+import os
 from pygame.locals import *
-fps_clock = pygame.time.Clock()
+FPS_CLOCK = pygame.time.Clock()
 TURKEY_X_POS = 20
 SURFACE = pygame.display.set_mode((600, 600))
 BLACK = (0, 0, 0)
+GROUND_Y_POS = 540
+
 
 class Turkey:
-    def __init__(self, starting_y_pos, frame_0_path, frame_1_path):
+    def __init__(
+        self,
+        starting_y_pos,
+        frame_0_path,
+        frame_1_path,
+        wing_path
+    ):
+
         self._frame_0 = pygame.image.load(frame_0_path)
         self._frame_1 = pygame.image.load(frame_1_path)
+        self._wing = pygame.image.load(wing_path)
         self._y_pos = starting_y_pos
+        self._downwards_momentum = 0.0
         self._which_frame = 0 # determines which frame we show
 
 
@@ -43,10 +55,31 @@ class Turkey:
                 (TURKEY_X_POS, self._y_pos)
             )
 
+        height = self._frame_0.get_size()[1]
+        if self._y_pos < GROUND_Y_POS - height:
+            pygame_surface.blit(
+                self._wing,
+                (TURKEY_X_POS + 50, self._y_pos + 60)
+            )
 
-    def update_y_pos(self, amount):
-        self._y_pos += amount
 
+    def gobble(self):
+        os.system("spd-say \"gobble gobble\" -t female3")
+
+
+    def update_y_pos(self):
+        height = self._frame_0.get_size()[1]
+        if self._y_pos + height >= GROUND_Y_POS:
+            self._y_pos = GROUND_Y_POS - height
+            if self._downwards_momentum > 0:
+                self._downwards_momentum = 0.0
+        else:
+            self._downwards_momentum += 1.0
+        self._y_pos += int(self._downwards_momentum)
+
+
+    def jump(self):
+        self._downwards_momentum = -10.0
 
     def switch_frame(self):
         if self._which_frame == 0:
@@ -55,11 +88,14 @@ class Turkey:
             self._which_frame = 0
 
 
-turkey = Turkey(
+TURKEY = Turkey(
     20,
-    "../assets/turkey0.png",
-    "../assets/turkey1.png"
+    "assets/turkey0.png",
+    "assets/turkey1.png",
+    "assets/wing.png"
 )
+
+GROUND = pygame.image.load("assets/ground_foreground.png")
 
 def update_game_state(ticks):
     for event in pygame.event.get():
@@ -69,13 +105,22 @@ def update_game_state(ticks):
 
     SURFACE.fill(BLACK)
 
-    turkey.render(SURFACE)
+    SURFACE.blit(GROUND, (0, GROUND_Y_POS))
+
+    TURKEY.update_y_pos()
+
+    TURKEY.render(SURFACE)
 
     if ticks % 6 == 0:
-        turkey.switch_frame()
+        TURKEY.switch_frame()
+
+    keys = pygame.key.get_pressed()
+    if keys[K_SPACE]:
+        TURKEY.gobble()
+        TURKEY.jump()
 
     pygame.display.update()
-    fps_clock.tick(30)
+    FPS_CLOCK.tick(30)
 
     if ticks == 59:
         return 0
