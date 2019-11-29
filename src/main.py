@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pygame
+import random
 import sys
 import os
 from pygame.locals import *
@@ -41,6 +42,7 @@ class Turkey:
         self._y_pos = starting_y_pos
         self._downwards_momentum = 0.0
         self._which_frame = 0 # determines which frame we show
+        self._apples_eaten = 0
 
 
     def render(self, pygame_surface):
@@ -82,11 +84,30 @@ class Turkey:
     def jump(self):
         self._downwards_momentum = -10.0
 
+
     def switch_frame(self):
         if self._which_frame == 0:
             self._which_frame = 1
         elif self._which_frame == 1:
             self._which_frame = 0
+
+
+    def get_width(self):
+        return self._frame_0.get_size()[0]
+
+
+    def get_height(self):
+        return self._frame_0.get_size()[1]
+
+
+    def get_y_pos(self):
+        return self._y_pos
+
+
+    def eat(self, apple):
+        os.system("spd-say \"cronch\" -t female3 -w -i100")
+        self._apples_eaten += 1
+        apple.reset_y_pos(random.randint(0, 500))
 
 
 turkey = Turkey(
@@ -109,12 +130,20 @@ def update_game_state(ticks):
     surface.fill(black)
     surface.blit(ground, (0, ground_y_pos))
 
-    if apple:
-        apple.render(surface)
-        apple.update(turkey_x_pos)
+    if apple.update(turkey_x_pos) == 1:
+        apple.reset_y_pos(random.randint(0, 500))
+    apple.render(surface)
 
     turkey.update_y_pos()
     turkey.render(surface)
+
+    if apple.get_x_pos() <= turkey_x_pos + turkey.get_width():
+        turkey_min = turkey.get_y_pos()
+        turkey_max = turkey_min + turkey.get_height()
+        turkey_range = range(turkey_min, turkey_max)
+        if apple.get_y_pos() in turkey_range:
+            turkey.eat(apple)
+
 
     if ticks % 6 == 0:
         turkey.switch_frame()
