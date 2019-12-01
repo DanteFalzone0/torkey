@@ -110,6 +110,10 @@ class Turkey:
         apple.reset_y_pos(random.randint(0, 500))
 
 
+    def get_score(self):
+        return self._apples_eaten
+
+
 turkey = Turkey(
     20,
     "assets/turkey0.png",
@@ -126,6 +130,8 @@ def update_game_state(ticks):
         if event.type == QUIT:
             pygame.quit()
             sys.exit(0)
+
+    pygame.display.set_caption(f"Score: {turkey.get_score()}")
 
     surface.fill(black)
     surface.blit(ground, (0, ground_y_pos))
