@@ -56,7 +56,7 @@ class Turkey:
         )
         pygame.display.update()
         os.system(
-            "spd-say \"You are dead. Play again?\" -t female3 -w"
+            "spd-say \"You are dead. Play again?\" -t female3 -w -r-50"
         )
         print(f"Score at time of death: {self._apples_eaten}")
         pygame.quit()
