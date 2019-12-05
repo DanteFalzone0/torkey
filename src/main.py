@@ -20,11 +20,13 @@ import sys
 import os
 from pygame.locals import *
 from apple import Apple
+from axe import Axe
 fps_clock = pygame.time.Clock()
 turkey_x_pos = 20
 surface = pygame.display.set_mode((600, 600))
 black = (0, 0, 0)
 ground_y_pos = 540
+AXE_COUNT = 5
 
 
 class Turkey:
@@ -33,16 +35,32 @@ class Turkey:
         starting_y_pos,
         frame_0_path,
         frame_1_path,
+        death_path,
         wing_path
     ):
 
         self._frame_0 = pygame.image.load(frame_0_path)
         self._frame_1 = pygame.image.load(frame_1_path)
+        self._corpse_view = pygame.image.load(death_path)
         self._wing = pygame.image.load(wing_path)
         self._y_pos = starting_y_pos
         self._downwards_momentum = 0.0
         self._which_frame = 0 # determines which frame we show
         self._apples_eaten = 0
+
+
+    def die(self, pygame_surface):
+        pygame_surface.blit(
+            self._corpse_view,
+            (turkey_x_pos, self._y_pos)
+        )
+        pygame.display.update()
+        os.system(
+            "spd-say \"You are dead. Play again?\" -t female3 -w"
+        )
+        print(f"Score at time of death: {self._apples_eaten}")
+        pygame.quit()
+        sys.exit(0)
 
 
     def render(self, pygame_surface):
@@ -118,18 +136,33 @@ turkey = Turkey(
     20,
     "assets/turkey0.png",
     "assets/turkey1.png",
+    "assets/deadtork.png",
     "assets/wing.png"
 )
 
 ground = pygame.image.load("assets/ground_foreground.png")
 
 apple = Apple(300, "assets/apple.png")
+axe_image_paths = []
+for i in range(0, 4):
+    axe_image_paths.append(f"assets/axe{i}.png")
+axes = []
 
 def update_game_state(ticks):
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit(0)
+
+    if len(axes) < AXE_COUNT:
+        if ticks % 100 == 0:
+            axes.append(
+                Axe(
+                    random.randint(0, 500),
+                    axe_image_paths
+                )
+            )
+
 
     pygame.display.set_caption(f"Score: {turkey.get_score()}")
 
@@ -143,7 +176,29 @@ def update_game_state(ticks):
     turkey.update_y_pos()
     turkey.render(surface)
 
-    if apple.get_x_pos() <= turkey_x_pos + turkey.get_width():
+    for axe in axes:
+        if axe.update(ticks) == 1:
+            axe.reset_y_pos(random.randint(0, 500))
+        axe.render(surface)
+        if axe.get_x_pos() in range(
+            turkey_x_pos,
+            turkey_x_pos + turkey.get_width()
+        ):
+            if axe.get_y_pos() in range(
+                turkey.get_y_pos(),
+                turkey.get_y_pos() + (turkey.get_height() // 2)
+            ):
+                surface.fill(black)
+                surface.blit(ground, (0, ground_y_pos))
+                apple.render(surface)
+                for axe_again in axes:
+                    axe_again.render(surface)
+                turkey.die(surface)
+
+    if apple.get_x_pos() in range(
+        turkey_x_pos,
+        turkey_x_pos + turkey.get_width()
+    ):
         turkey_min = turkey.get_y_pos()
         turkey_max = turkey_min + turkey.get_height()
         turkey_range = range(turkey_min, turkey_max)
@@ -162,7 +217,7 @@ def update_game_state(ticks):
     pygame.display.update()
     fps_clock.tick(30)
 
-    if ticks == 59:
+    if ticks == 119:
         return 0
     else:
         return ticks + 1

@@ -5,13 +5,14 @@ class Apple:
         self._x_pos = 600 # rightmost edge of the screen
         self._y_pos = y_pos
         self.image = pygame.image.load(image_path)
+        self._speed = 4.0
 
 
     def update(self, turkey_x_pos):
         if self._x_pos <= 0:
             return 1
         else:
-            self._x_pos -= 5
+            self._x_pos -= self._speed
             return 0
 
 
@@ -22,6 +23,7 @@ class Apple:
     def reset_y_pos(self, value):
         self._x_pos = 600
         self._y_pos = value
+        self._speed += 0.5
 
 
     def get_y_pos(self):
